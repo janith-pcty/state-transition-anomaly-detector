@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/StateTransitionAnomalyDetection.Adapters.Mocks/StateTransitionAnomalyDetection.Adapters.Mocks.csproj" />
+    <Project Path="src/StateTransitionAnomalyDetection.Host/StateTransitionAnomalyDetection.Host.csproj" />
+    <Project Path="src/StateTransitionAnomalyDetection.Tests/StateTransitionAnomalyDetection.Tests.csproj" />
+    <Project Path="src/StateTransitionAnomalyDetection/StateTransitionAnomalyDetection.csproj" />
+  </Folder>
+</Solution>

@@ -1,0 +1,6 @@
+@StateTransitionAnomalyDetection.Host_HostAddress = http://localhost:5214
+
+GET {{StateTransitionAnomalyDetection.Host_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
