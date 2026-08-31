@@ -64,6 +64,34 @@ public static class AnomalyEndpoints
             return Results.Ok(allFlags.OrderByDescending(f => f.Score).ToList());
         });
 
+        app.MapGet("/anomalies/explain", async (
+            IEnumerable<IStateTransitionSource> sources,
+            StateDurationBaselineCalculator calculator,
+            AnomalyDetector detector,
+            IAnomalyExplainer explainer,
+            CancellationToken ct) =>
+        {
+            var now = DateTimeOffset.UtcNow;
+            var allFlags = new List<AnomalyFlag>();
+            foreach (var source in sources)
+            {
+                var entityTypes = await source.GetEntityTypesAsync(ct);
+                foreach (var type in entityTypes)
+                {
+                    var history = await source.GetHistoryAsync(type, ct);
+                    var openEntities = await source.GetOpenEntitiesAsync(type, ct);
+                    var terminalStates = await source.GetTerminalStatesAsync(type, ct);
+
+                    var baselines = calculator.Calculate(type, history, terminalStates);
+                    var flags = detector.Detect(source.SystemName, type, openEntities, baselines, terminalStates, now, includeAll: true);
+                    allFlags.AddRange(flags);
+                }
+            }
+
+            var explanation = await explainer.ExplainSystemsAsync(allFlags, ct);
+            return Results.Ok(new ExplainResponse(explanation));
+        });
+
         app.MapGet("/entities/{systemName}/{entityType}/{entityId}/history", async (
             IEnumerable<IStateTransitionSource> sources,
             StateDurationBaselineCalculator calculator,

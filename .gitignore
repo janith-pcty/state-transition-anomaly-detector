@@ -9,4 +9,5 @@ obj/
 ## IDE
 .vs/
 .vscode/
+.idea/
 *.swp
