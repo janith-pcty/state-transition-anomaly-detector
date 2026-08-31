@@ -104,7 +104,10 @@ public static class AnomalyEndpoints
             return Results.Ok(new EntityHistoryResponse(entityId, entityType, transitions, baselineDtos));
         });
 
-        app.MapPost("/reseed", (IEnumerable<IStateTransitionSource> sources) =>
+        app.MapPost("/reseed", async (
+            IEnumerable<IStateTransitionSource> sources,
+            AnomalyBroadcaster broadcaster,
+            CancellationToken ct) =>
         {
             foreach (var source in sources)
             {
@@ -112,6 +115,11 @@ public static class AnomalyEndpoints
                 {
                     reseedable.Reseed();
                 }
+            }
+
+            foreach (var source in sources)
+            {
+                await broadcaster.BroadcastAsync(source.SystemName, ct);
             }
 
             return Results.NoContent();
@@ -133,11 +141,13 @@ public static class AnomalyEndpoints
             return Results.Ok(states);
         });
 
-        app.MapPost("/entities/{systemName}/{entityType}", (
+        app.MapPost("/entities/{systemName}/{entityType}", async (
             IEnumerable<IStateTransitionSource> sources,
+            AnomalyBroadcaster broadcaster,
             string systemName,
             string entityType,
-            CreateEntityRequest request) =>
+            CreateEntityRequest request,
+            CancellationToken ct) =>
         {
             var source = sources.FirstOrDefault(s => s.SystemName == systemName);
             if (source is not ICreatableSource creatable)
@@ -146,6 +156,11 @@ public static class AnomalyEndpoints
             }
 
             var (outcome, entity) = creatable.CreateEntity(entityType, request.EntityId, request.InitialState);
+            if (outcome == CreateOutcome.Success)
+            {
+                await broadcaster.BroadcastAsync(systemName, ct);
+            }
+
             return outcome switch
             {
                 CreateOutcome.Success => Results.Created(
@@ -158,12 +173,14 @@ public static class AnomalyEndpoints
             };
         });
 
-        app.MapPost("/entities/{systemName}/{entityType}/{entityId}/transition", (
+        app.MapPost("/entities/{systemName}/{entityType}/{entityId}/transition", async (
             IEnumerable<IStateTransitionSource> sources,
+            AnomalyBroadcaster broadcaster,
             string systemName,
             string entityType,
             string entityId,
-            TransitionRequest request) =>
+            TransitionRequest request,
+            CancellationToken ct) =>
         {
             var source = sources.FirstOrDefault(s => s.SystemName == systemName);
             if (source is not IManuallyTransitionableSource transitionable)
@@ -172,6 +189,11 @@ public static class AnomalyEndpoints
             }
 
             var outcome = transitionable.TransitionEntity(entityType, entityId, request.ToState);
+            if (outcome == TransitionOutcome.Success)
+            {
+                await broadcaster.BroadcastAsync(systemName, ct);
+            }
+
             return outcome switch
             {
                 TransitionOutcome.Success => Results.NoContent(),
