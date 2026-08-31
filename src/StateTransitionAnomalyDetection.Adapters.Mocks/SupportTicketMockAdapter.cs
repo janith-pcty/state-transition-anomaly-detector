@@ -2,7 +2,7 @@ using StateTransitionAnomalyDetection;
 
 namespace StateTransitionAnomalyDetection.Adapters.Mocks;
 
-public sealed class SupportTicketMockAdapter : IStateTransitionSource, IReseedableSource, IManuallyTransitionableSource
+public sealed class SupportTicketMockAdapter : IStateTransitionSource, IReseedableSource, IManuallyTransitionableSource, ICreatableSource
 {
     private const string EntityTypeName = "Ticket";
     private const int HistoricalCount = 200;
@@ -142,5 +142,42 @@ public sealed class SupportTicketMockAdapter : IStateTransitionSource, IReseedab
         }
 
         return TransitionOutcome.Success;
+    }
+
+    public (CreateOutcome Outcome, OpenEntityState? Entity) CreateEntity(string entityType, string? entityId, string? initialState)
+    {
+        if (entityType != EntityTypeName)
+        {
+            return (CreateOutcome.UnknownEntityType, null);
+        }
+
+        var resolvedState = string.IsNullOrWhiteSpace(initialState) ? StateChain[0] : initialState;
+        if (!AllStates.Contains(resolvedState) || TerminalStates.Contains(resolvedState))
+        {
+            return (CreateOutcome.InvalidState, null);
+        }
+
+        lock (_lock)
+        {
+            var resolvedId = string.IsNullOrWhiteSpace(entityId) ? $"MANUAL-{Guid.NewGuid():N}" : entityId;
+
+            if (_openData.OpenEntities.Any(e => e.EntityId == resolvedId))
+            {
+                return (CreateOutcome.DuplicateEntityId, null);
+            }
+
+            var now = DateTimeOffset.UtcNow;
+            var entity = new OpenEntityState(EntityTypeName, resolvedId, resolvedState, now);
+
+            var newEvents = new List<StateTransitionEvent>(_openData.Events)
+            {
+                new(EntityTypeName, resolvedId, null, resolvedState, now),
+            };
+            var newOpenEntities = new List<OpenEntityState>(_openData.OpenEntities) { entity };
+
+            _openData = (newEvents, newOpenEntities);
+
+            return (CreateOutcome.Success, entity);
+        }
     }
 }

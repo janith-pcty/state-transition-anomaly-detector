@@ -133,6 +133,31 @@ public static class AnomalyEndpoints
             return Results.Ok(states);
         });
 
+        app.MapPost("/entities/{systemName}/{entityType}", (
+            IEnumerable<IStateTransitionSource> sources,
+            string systemName,
+            string entityType,
+            CreateEntityRequest request) =>
+        {
+            var source = sources.FirstOrDefault(s => s.SystemName == systemName);
+            if (source is not ICreatableSource creatable)
+            {
+                return Results.NotFound();
+            }
+
+            var (outcome, entity) = creatable.CreateEntity(entityType, request.EntityId, request.InitialState);
+            return outcome switch
+            {
+                CreateOutcome.Success => Results.Created(
+                    $"/entities/{systemName}/{entityType}/{entity!.EntityId}/history",
+                    new CreateEntityResponse(entity.EntityId, entity.EntityType, entity.CurrentState, entity.EnteredStateAt)),
+                CreateOutcome.UnknownEntityType => Results.NotFound(),
+                CreateOutcome.InvalidState => Results.BadRequest($"'{request.InitialState}' is not a valid initial state for {entityType}."),
+                CreateOutcome.DuplicateEntityId => Results.Conflict($"An entity with id '{request.EntityId}' already exists for {entityType}."),
+                _ => Results.Problem(),
+            };
+        });
+
         app.MapPost("/entities/{systemName}/{entityType}/{entityId}/transition", (
             IEnumerable<IStateTransitionSource> sources,
             string systemName,

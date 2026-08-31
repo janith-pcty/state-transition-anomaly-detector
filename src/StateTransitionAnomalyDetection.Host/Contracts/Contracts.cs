@@ -25,4 +25,8 @@ public sealed record EntityHistoryResponse(
 
 public sealed record TransitionRequest(string ToState);
 
+public sealed record CreateEntityRequest(string? EntityId, string? InitialState);
+
+public sealed record CreateEntityResponse(string EntityId, string EntityType, string State, DateTimeOffset EnteredStateAt);
+
 public sealed record ExplainResponse(string Explanation);

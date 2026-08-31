@@ -20,6 +20,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\StateTransitionAnomalyDetection\StateTransitionAnomalyDetection.csproj" />
+    <ProjectReference Include="..\StateTransitionAnomalyDetection.Adapters.Mocks\StateTransitionAnomalyDetection.Adapters.Mocks.csproj" />
   </ItemGroup>
 
 </Project>
