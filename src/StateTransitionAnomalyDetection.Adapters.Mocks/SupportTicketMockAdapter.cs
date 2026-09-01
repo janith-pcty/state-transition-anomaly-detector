@@ -5,9 +5,9 @@ namespace StateTransitionAnomalyDetection.Adapters.Mocks;
 public sealed class SupportTicketMockAdapter : IStateTransitionSource, IReseedableSource, IManuallyTransitionableSource, ICreatableSource
 {
     private const string EntityTypeName = "Ticket";
-    private const int HistoricalCount = 200;
-    private const int OpenCount = 12;
-    private const int PinnedStuckCount = 2;
+    private const int HistoricalCount = 60;
+    private const int OpenCount = 8;
+    private const int PinnedStuckCount = 1;
 
     private static readonly string[] StateChain =
         ["New", "Triaged", "InProgress", "WaitingOnCustomer", "Resolved"];

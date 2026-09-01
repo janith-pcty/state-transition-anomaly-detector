@@ -5,9 +5,9 @@ namespace StateTransitionAnomalyDetection.Adapters.Mocks;
 public sealed class PrintJobMockAdapter : IStateTransitionSource, IReseedableSource, IManuallyTransitionableSource, ICreatableSource
 {
     private const string EntityTypeName = "PrintJob";
-    private const int HistoricalCount = 200;
-    private const int OpenCount = 12;
-    private const int PinnedStuckCount = 2;
+    private const int HistoricalCount = 500;
+    private const int OpenCount = 25;
+    private const int PinnedStuckCount = 3;
 
     private static readonly string[] StateChain =
         ["Requested", "Created", "Pending", "Queued", "AllFilesReceived", "SentToPrinter", "Completed"];
